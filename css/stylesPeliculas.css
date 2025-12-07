@@ -1,0 +1,64 @@
+body {
+    background-color: rgb(65, 65, 65);
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+.espacioArriba {
+    min-height: 150px;
+}
+.espacioCentro {
+    min-height: 60px;
+}
+.container {
+    min-height: 600px;
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    border: solid 4px black;
+    border-radius: 5px;
+    width: 80%;
+    gap: 20px;
+}
+.bloqueAgregar {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    width: 70%;
+    justify-content: center;
+}
+.izq {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    gap: 5px;
+    align-items: center;
+    font-size: 30px;
+}
+.der {
+    width: 50%;
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    font-size: 30px;
+    border: solid 4px black;
+}
+.button-33 {
+  background-color: #999999;
+  border-radius: 100px;
+  color: rgb(0, 0, 0);
+  cursor: pointer;
+  display: inline-block;
+  font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+  padding: 7px 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 250ms;
+  border: 0;
+  font-size: 16px;
+}
+
+.button-33:hover {
+  box-shadow: rgba(44,187,99,.35) 0 -25px 18px -14px inset,rgba(44,187,99,.25) 0 1px 2px,rgba(44,187,99,.25) 0 2px 4px,rgba(44,187,99,.25) 0 4px 8px,rgba(44,187,99,.25) 0 8px 16px,rgba(44,187,99,.25) 0 16px 32px;
+  transform: scale(1.05) rotate(-1deg);
+}

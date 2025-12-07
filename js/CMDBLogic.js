@@ -1,0 +1,213 @@
+/**
+ * @fileoverview Módulo principal de la aplicación CMDB (CIFP Movie DataBase).
+ * Contiene las clases Genero y Pelicula, así como el servicio DataService
+ * para gestionar la persistencia de datos en LocalStorage.
+ * @module CMDBLogic
+ */
+
+/**
+ * Clase que representa un Género de película.
+ * @class
+ * @classdesc Representa un género cinematográfico con un identificador único y nombre.
+ */
+class Genero {
+    /**
+     * Crea una instancia de Genero.
+     * @param {number} id - Identificador único (solo lectura).
+     * @param {string} nombre - Nombre del género.
+     */
+    constructor(id, nombre) {
+        this._id = id;
+        this.nombre = nombre;
+    }
+
+    /**
+     * Obtiene el ID del género.
+     * @returns {number} El identificador único del género.
+     * @readonly
+     */
+    get id() {
+        return this._id;
+    }
+}
+
+/**
+ * Clase que representa una Película.
+ * @class
+ * @classdesc Representa una película con sus datos básicos, géneros asociados y sistema de votación.
+ */
+class Pelicula {
+    /**
+     * Crea una instancia de Pelicula.
+     * @param {number} id - Identificador único.
+     * @param {string} titulo - Título de la película.
+     * @param {string} fecha - Fecha de estreno (AAAA-MM-DD).
+     * @param {number} popularidad - Valor entre 0 y 100.
+     * @param {number[]} generosIds - Array con los IDs de los géneros.
+     */
+    constructor(id, titulo, fecha, popularidad, generosIds = []) {
+        this._id = id;
+        this.titulo = titulo;
+        this.fecha = fecha;
+        this.popularidad = popularidad;
+        this.generos = generosIds; // Array de IDs de géneros
+        this.puntuaciones = []; // Array para guardar cada voto [cite: 518]
+    }
+
+    /**
+     * Obtiene el ID de la película.
+     * @returns {number} El identificador único de la película.
+     * @readonly
+     */
+    get id() {
+        return this._id;
+    }
+
+    /**
+     * Calcula la media de las puntuaciones.
+     * @returns {number} Media redondeada o 0 si no hay votos.
+     */
+    get puntuacionMedia() {
+        if (this.puntuaciones.length === 0) return 0;
+        const suma = this.puntuaciones.reduce((a, b) => a + b, 0);
+        const media = suma / this.puntuaciones.length;
+        // Redondear manualmente sin Math.round (no explicado en PDFs)
+        // Si la parte decimal es >= 0.5, redondeamos hacia arriba
+        const parteEntera = parseInt(media);
+        const parteDecimal = media - parteEntera;
+        if (parteDecimal >= 0.5) {
+            return parteEntera + 1;
+        } else {
+            return parteEntera;
+        }
+    }
+
+    /**
+     * Devuelve el número total de votos.
+     * @returns {number}
+     */
+    get numeroVotos() {
+        return this.puntuaciones.length; // [cite: 521]
+    }
+
+    /**
+     * Añade un voto a la película.
+     * @param {number} valor - Valor entre 0 y 10.
+     */
+    votar(valor) {
+        this.puntuaciones.push(valor);
+    }
+}
+
+// --- GESTIÓN DE LOCALSTORAGE Y DATOS ---
+
+/**
+ * Servicio para gestionar la persistencia de datos (Simula una BD).
+ * Se encarga de guardar y recuperar del LocalStorage.
+ * @namespace DataService
+ * @type {Object}
+ */
+const DataService = {
+    /**
+     * Inicializa los datos si no existen en LocalStorage.
+     * Crea géneros por defecto y un array vacío de películas.
+     * @method
+     * @memberof DataService
+     */
+    inicializar: function() {
+        if (!localStorage.getItem('cmdb_generos')) {
+            const generosIniciales = [
+                new Genero(1, "Ciencia Ficción"),
+                new Genero(2, "Drama")
+            ];
+            this.guardarGeneros(generosIniciales);
+        }
+
+        if (!localStorage.getItem('cmdb_peliculas')) {
+            // Creamos 5 películas de ejemplo según el enunciado
+            const peliculasInit = [
+                new Pelicula(1, "Inception", "2010-07-16", 90, [1, 2]),
+                new Pelicula(2, "Interstellar", "2014-11-07", 95, [1, 2]),
+                new Pelicula(3, "The Matrix", "1999-03-31", 100, [1]),
+                new Pelicula(4, "El Padrino", "1972-03-14", 98, [2]),
+                new Pelicula(5, "Dune", "2021-09-17", 85, [1])
+            ];
+            // Simulamos algunos votos
+            peliculasInit[0].puntuaciones = [8, 9, 10];
+            peliculasInit[1].puntuaciones = [9, 9, 8];
+            peliculasInit[2].puntuaciones = [10, 9, 10, 8];
+            this.guardarPeliculas(peliculasInit);
+        }
+    },
+
+    /**
+     * Recupera todos los géneros convertidos a instancias de la clase Genero.
+     * @method
+     * @memberof DataService
+     * @returns {Genero[]} Array de instancias de Genero.
+     */
+    getGeneros: function() {
+        const datos = JSON.parse(localStorage.getItem('cmdb_generos')) || [];
+        return datos.map(g => new Genero(g._id, g.nombre));
+    },
+
+    /**
+     * Guarda la lista de géneros en LocalStorage.
+     * @method
+     * @memberof DataService
+     * @param {Genero[]} generos - Array de géneros a guardar.
+     */
+    guardarGeneros: function(generos) {
+        localStorage.setItem('cmdb_generos', JSON.stringify(generos));
+    },
+
+    /**
+     * Recupera todas las películas convertidas a instancias de la clase Pelicula.
+     * Importante para recuperar los métodos (getters y votar).
+     * @method
+     * @memberof DataService
+     * @returns {Pelicula[]} Array de instancias de Pelicula.
+     */
+    getPeliculas: function() {
+        const datos = JSON.parse(localStorage.getItem('cmdb_peliculas')) || [];
+        return datos.map(p => {
+            const peli = new Pelicula(p._id, p.titulo, p.fecha, p.popularidad, p.generos);
+            peli.puntuaciones = p.puntuaciones || [];
+            return peli;
+        });
+    },
+
+    /**
+     * Guarda la lista de películas en LocalStorage.
+     * @method
+     * @memberof DataService
+     * @param {Pelicula[]} peliculas - Array de películas a guardar.
+     */
+    guardarPeliculas: function(peliculas) {
+        localStorage.setItem('cmdb_peliculas', JSON.stringify(peliculas));
+    },
+
+    /**
+     * Genera el siguiente ID disponible para una colección.
+     * @method
+     * @memberof DataService
+     * @param {Array} coleccion - Array de objetos con propiedad id.
+     * @returns {number} Nuevo ID (máximo ID + 1, o 1 si la colección está vacía).
+     */
+    siguienteId: function(coleccion) {
+        if (coleccion.length === 0) return 1;
+        // Busca el ID máximo y suma 1 
+        const maxId = coleccion.reduce((max, item) => (item.id > max ? item.id : max), 0);
+        return maxId + 1;
+    }
+};
+
+/**
+ * Inicializa los datos al cargar cualquier página.
+ * Se ejecuta automáticamente cuando el DOM está listo.
+ * @event DOMContentLoaded
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    DataService.inicializar();
+});
+

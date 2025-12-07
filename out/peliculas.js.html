@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: peliculas.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: peliculas.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview Controlador para la gestión de Películas.
+ * Maneja el formulario de creación de películas y la carga de géneros como checkboxes.
+ * @module peliculas
+ */
+
+/**
+ * Controlador para la gestión de Películas (Admin).
+ * Se ejecuta cuando el DOM está completamente cargado.
+ * @event DOMContentLoaded
+ */
+document.addEventListener('DOMContentLoaded', () => {
+
+    /**
+     * Referencias a elementos del DOM.
+     * @type {HTMLFormElement}
+     */
+    const form = document.getElementById('formPeliculas');
+    /**
+     * @type {HTMLInputElement}
+     */
+    const inputNombre = document.getElementById('Nombre');
+    /**
+     * @type {HTMLInputElement}
+     */
+    const inputFecha = document.getElementById('fecha');
+    /**
+     * @type {HTMLInputElement}
+     */
+    const inputPopularidad = document.getElementById('Popularidad');
+    /**
+     * @type {HTMLElement}
+     */
+    const contenedorGeneros = document.getElementById('listaGeneros');
+    /**
+     * @type {HTMLInputElement}
+     */
+    const inputId = document.getElementById('idPelicula');
+    /**
+     * @type {HTMLButtonElement}
+     */
+    const btnSubmit = document.getElementById('btnSubmitPelicula');
+    /**
+     * @type {HTMLButtonElement}
+     */
+    const btnCancelar = document.getElementById('btnCancelarPelicula');
+    
+    /**
+     * ID de la película que se está editando (null si no se está editando).
+     * @type {number|null}
+     */
+    let peliculaEditando = null;
+
+    /**
+     * Carga los géneros disponibles como checkboxes en el formulario.
+     * Si no hay géneros, muestra un mensaje informativo.
+     * @function cargarGenerosFormulario
+     */
+    function cargarGenerosFormulario() {
+        const generos = DataService.getGeneros();
+        contenedorGeneros.innerHTML = ''; // Limpiar
+
+        if (generos.length === 0) {
+            contenedorGeneros.innerHTML = '&lt;p>No hay géneros. Crea uno primero.&lt;/p>';
+            return;
+        }
+
+        generos.forEach(g => {
+            // Creamos un contenedor para checkbox + etiqueta
+            const div = document.createElement('div');
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = g.id;
+            checkbox.id = `gen-${g.id}`;
+            checkbox.name = 'generos'; // Útil para agrupar
+
+            const label = document.createElement('label');
+            label.htmlFor = `gen-${g.id}`;
+            label.textContent = g.nombre;
+            label.style.marginLeft = "5px";
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            contenedorGeneros.appendChild(div);
+        });
+    }
+
+    /**
+     * Maneja el evento de agregar o modificar una película.
+     * Valida todos los campos y crea o modifica la película si todo es correcto.
+     * @function agregarPelicula
+     * @param {Event} e - Evento del formulario.
+     */
+    function agregarPelicula(e) {
+        e.preventDefault();
+
+        const titulo = inputNombre.value.trim();
+        const fechaStr = inputFecha.value;
+        const popularidad = parseInt(inputPopularidad.value);
+
+        // --- VALIDACIONES (Según PDF) ---
+        
+        // a) Validar campos obligatorios básicos
+        if (!titulo || !fechaStr || isNaN(popularidad)) {
+            alert("Por favor, rellena todos los campos.");
+            return;
+        }
+
+        // Validar longitud del título
+        if (titulo.length > 100) {
+            alert("El título no puede superar los 100 caracteres.");
+            return;
+        }
+
+        // b) Validar Fecha: Ni anterior a 1900 ni posterior a hoy 
+        const fechaIngresada = new Date(fechaStr);
+        const fechaMinima = new Date('1900-01-01');
+        const fechaHoy = new Date();
+        // Ajustamos horas para comparar solo fechas
+        fechaHoy.setHours(0,0,0,0);
+
+        if (fechaIngresada &lt; fechaMinima) {
+            alert("La fecha no puede ser anterior al 01/01/1900.");
+            return;
+        }
+        if (fechaIngresada > fechaHoy) {
+            alert("La fecha no puede ser futura.");
+            return;
+        }
+
+        // c) Validar Popularidad (0-100) 
+        if (popularidad &lt; 0 || popularidad > 100) {
+            alert("La popularidad debe estar entre 0 y 100.");
+            return;
+        }
+
+        // d) Obtener géneros seleccionados
+        const checkboxes = contenedorGeneros.querySelectorAll('input[type="checkbox"]:checked');
+        const generosSeleccionados = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+        if (generosSeleccionados.length === 0) {
+            alert("Selecciona al menos un género.");
+            return;
+        }
+
+        const peliculas = DataService.getPeliculas();
+
+        // Si estamos editando
+        if (peliculaEditando !== null) {
+            const pelicula = peliculas.find(p => p.id === peliculaEditando);
+            if (pelicula) {
+                pelicula.titulo = titulo;
+                pelicula.fecha = fechaStr;
+                pelicula.popularidad = popularidad;
+                pelicula.generos = generosSeleccionados;
+                DataService.guardarPeliculas(peliculas);
+                cancelarEdicion();
+                alert("Película modificada correctamente.");
+            }
+            return;
+        }
+
+        // Si estamos agregando
+        const nuevoId = DataService.siguienteId(peliculas);
+
+        const nuevaPelicula = new Pelicula(
+            nuevoId, 
+            titulo, 
+            fechaStr, 
+            popularidad, 
+            generosSeleccionados
+        );
+
+        peliculas.push(nuevaPelicula);
+        DataService.guardarPeliculas(peliculas);
+
+        // Resetear formulario
+        form.reset();
+        inputId.value = '';
+        alert("Película agregada correctamente.");
+    }
+
+    /**
+     * Inicia la edición de una película.
+     * @param {number} id - ID de la película a editar.
+     */
+    function editarPelicula(id) {
+        const peliculas = DataService.getPeliculas();
+        const pelicula = peliculas.find(p => p.id === id);
+        
+        if (pelicula) {
+            peliculaEditando = id;
+            inputId.value = pelicula.id;
+            inputNombre.value = pelicula.titulo;
+            inputFecha.value = pelicula.fecha;
+            inputPopularidad.value = pelicula.popularidad;
+            
+            // Marcar los géneros de la película
+            const checkboxes = contenedorGeneros.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = pelicula.generos.includes(parseInt(cb.value));
+            });
+            
+            btnSubmit.value = "Modificar";
+            btnCancelar.style.display = "inline-block";
+            inputNombre.focus();
+        }
+    }
+
+    /**
+     * Cancela la edición y restaura el formulario al modo agregar.
+     */
+    function cancelarEdicion() {
+        peliculaEditando = null;
+        inputId.value = '';
+        form.reset();
+        btnSubmit.value = "Agregar";
+        btnCancelar.style.display = "none";
+        
+        // Desmarcar todos los checkboxes
+        const checkboxes = contenedorGeneros.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    /**
+     * Expone la función editarPelicula globalmente para que pueda ser llamada desde listado.js
+     * @param {number} id - ID de la película a editar.
+     */
+    window.editarPelicula = editarPelicula;
+
+    // --- INICIALIZACIÓN ---
+    /**
+     * Event listener para el envío del formulario.
+     */
+    form.addEventListener('submit', agregarPelicula);
+
+    /**
+     * Event listener para cancelar la edición.
+     */
+    btnCancelar.addEventListener('click', () => {
+        cancelarEdicion();
+    });
+    
+    /**
+     * Carga inicial de géneros al cargar la página.
+     */
+    cargarGenerosFormulario();
+
+    /**
+     * Si hay una película para editar (desde sessionStorage), la carga.
+     */
+    const peliculaIdEditar = sessionStorage.getItem('editarPeliculaId');
+    if (peliculaIdEditar) {
+        editarPelicula(parseInt(peliculaIdEditar));
+        sessionStorage.removeItem('editarPeliculaId');
+    }
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CMDBLogic.html">CMDBLogic</a></li><li><a href="module-app.html">app</a></li><li><a href="module-generos.html">generos</a></li><li><a href="module-listado.html">listado</a></li><li><a href="module-peliculas.html">peliculas</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CMDBLogic-DataService.html">DataService</a></li><li><a href="module-app-DataService.html">DataService</a></li></ul><h3>Classes</h3><ul><li><a href="module-CMDBLogic-Genero.html">Genero</a></li><li><a href="module-CMDBLogic-Pelicula.html">Pelicula</a></li><li><a href="module-app-Genero.html">Genero</a></li><li><a href="module-app-Pelicula.html">Pelicula</a></li></ul><h3>Events</h3><ul><li><a href="module-peliculas.html#~event:DOMContentLoaded">DOMContentLoaded</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sun Dec 07 2025 01:56:21 GMT+0100 (hora estándar de Europa central)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

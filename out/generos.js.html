@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: generos.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: generos.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview Controlador para la gestión de géneros.
+ * Maneja el listado, alta y baja de géneros interactuando con el DOM y DataService.
+ * @module generos
+ */
+
+/**
+ * Controlador para la gestión de géneros.
+ * Se ejecuta cuando el DOM está completamente cargado.
+ * @event DOMContentLoaded
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    
+    /**
+     * Referencias a elementos del DOM.
+     * @type {HTMLFormElement}
+     */
+    const form = document.getElementById('formGeneros');
+    /**
+     * @type {HTMLInputElement}
+     */
+    const inputNombre = document.getElementById('nuevoGenero');
+    /**
+     * @type {HTMLInputElement}
+     */
+    const inputId = document.getElementById('idGenero');
+    /**
+     * @type {HTMLElement}
+     */
+    const listaGeneros = document.getElementById('listaGenerosPagina');
+    /**
+     * @type {HTMLButtonElement}
+     */
+    const btnSubmit = document.getElementById('btnSubmitGenero');
+    /**
+     * @type {HTMLButtonElement}
+     */
+    const btnCancelar = document.getElementById('btnCancelarGenero');
+    
+    /**
+     * ID del género que se está editando (null si no se está editando).
+     * @type {number|null}
+     */
+    let generoEditando = null;
+
+    /**
+     * Renderiza la lista de géneros en el HTML.
+     * Limpia la lista actual y la reconstruye desde el LocalStorage.
+     */
+    function pintarGeneros() {
+        const generos = DataService.getGeneros();
+        
+        // Limpiamos la lista actual (innerHTML = "")
+        listaGeneros.innerHTML = '';
+
+        generos.forEach(genero => {
+            // Creamos el elemento li
+            const li = document.createElement('li');
+            li.style.marginBottom = "10px"; // Un poco de estilo inline para separar
+            
+            // Texto del género: ID - Nombre
+            const texto = document.createTextNode(`ID: ${genero.id} - ${genero.nombre} `);
+            li.appendChild(texto);
+
+            // Botón de modificar
+            const btnModificar = document.createElement('button');
+            btnModificar.textContent = "Modificar";
+            btnModificar.style.marginLeft = "10px";
+            btnModificar.classList.add('button-33');
+            btnModificar.style.fontSize = "12px";
+            btnModificar.style.padding = "2px 10px";
+            btnModificar.addEventListener('click', () => editarGenero(genero.id));
+
+            // Botón de eliminar (Requisito CRUD)
+            const btnBorrar = document.createElement('button');
+            btnBorrar.textContent = "Eliminar";
+            btnBorrar.style.marginLeft = "10px";
+            btnBorrar.classList.add('button-33');
+            btnBorrar.style.fontSize = "12px";
+            btnBorrar.style.padding = "2px 10px";
+            btnBorrar.addEventListener('click', () => borrarGenero(genero.id));
+
+            li.appendChild(btnModificar);
+            li.appendChild(btnBorrar);
+            listaGeneros.appendChild(li);
+        });
+    }
+
+    /**
+     * Maneja el evento de agregar o modificar un género.
+     * @param {Event} e - Evento del formulario.
+     */
+    function agregarGenero(e) {
+        e.preventDefault();
+
+        const nombre = inputNombre.value.trim();
+
+        // Validaciones según PDF
+        if (nombre === "") {
+            alert("El nombre no puede estar vacío.");
+            return;
+        }
+
+        if (nombre.length > 100) {
+            alert("El nombre no puede superar los 100 caracteres.");
+            return;
+        }
+
+        const generos = DataService.getGeneros();
+
+        // Si estamos editando
+        if (generoEditando !== null) {
+            const genero = generos.find(g => g.id === generoEditando);
+            if (genero) {
+                // Comprobar si el nuevo nombre ya existe (excepto el actual)
+                const existe = generos.some(g => g.id !== generoEditando &amp;&amp; g.nombre.toLowerCase() === nombre.toLowerCase());
+                if (existe) {
+                    alert("Este género ya existe.");
+                    return;
+                }
+                genero.nombre = nombre;
+                DataService.guardarGeneros(generos);
+                cancelarEdicion();
+                pintarGeneros();
+                alert("Género modificado correctamente.");
+            }
+            return;
+        }
+
+        // Si estamos agregando
+        // Comprobar si ya existe
+        const existe = generos.some(g => g.nombre.toLowerCase() === nombre.toLowerCase());
+        if (existe) {
+            alert("Este género ya existe.");
+            return;
+        }
+
+        // Generar ID autoincremental
+        const nuevoId = DataService.siguienteId(generos);
+
+        // Crear instancia y guardar
+        const nuevoGenero = new Genero(nuevoId, nombre);
+        generos.push(nuevoGenero);
+        DataService.guardarGeneros(generos);
+
+        // Limpiar input y repintar
+        inputNombre.value = '';
+        inputId.value = '';
+        pintarGeneros();
+    }
+
+    /**
+     * Inicia la edición de un género.
+     * @param {number} id - ID del género a editar.
+     */
+    function editarGenero(id) {
+        const generos = DataService.getGeneros();
+        const genero = generos.find(g => g.id === id);
+        
+        if (genero) {
+            generoEditando = id;
+            inputId.value = genero.id;
+            inputNombre.value = genero.nombre;
+            btnSubmit.value = "Modificar";
+            btnCancelar.style.display = "inline-block";
+            inputNombre.focus();
+        }
+    }
+
+    /**
+     * Cancela la edición y restaura el formulario al modo agregar.
+     */
+    function cancelarEdicion() {
+        generoEditando = null;
+        inputId.value = '';
+        inputNombre.value = '';
+        btnSubmit.value = "Agregar";
+        btnCancelar.style.display = "none";
+    }
+
+    /**
+     * Elimina un género si no está siendo usado por ninguna película.
+     * @param {number} id - ID del género a eliminar.
+     */
+    function borrarGenero(id) {
+        // Validación de integridad referencial 
+        const peliculas = DataService.getPeliculas();
+        
+        // Buscamos si alguna película tiene este ID en su array de 'generos'
+        // Recordamos que en Pelicula guardamos un array de IDs (ej: [1, 2])
+        const estaEnUso = peliculas.some(p => p.generos.includes(id));
+
+        if (estaEnUso) {
+            alert("No se puede eliminar el género: hay películas asociadas a él. Elimine primero el género de las películas.");
+            return;
+        }
+
+        if (confirm("¿Seguro que quieres eliminar este género?")) {
+            let generos = DataService.getGeneros();
+            // Filtramos para quitar el que coincide con el ID
+            generos = generos.filter(g => g.id !== id);
+            
+            DataService.guardarGeneros(generos);
+            pintarGeneros();
+        }
+    }
+
+    // --- Inicialización ---
+    
+    /**
+     * Event listener para el envío del formulario.
+     */
+    form.addEventListener('submit', agregarGenero);
+
+    /**
+     * Event listener para cancelar la edición.
+     */
+    btnCancelar.addEventListener('click', () => {
+        cancelarEdicion();
+    });
+
+    /**
+     * Pinta la lista inicial de géneros al cargar la página.
+     */
+    pintarGeneros();
+});</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CMDBLogic.html">CMDBLogic</a></li><li><a href="module-app.html">app</a></li><li><a href="module-generos.html">generos</a></li><li><a href="module-listado.html">listado</a></li><li><a href="module-peliculas.html">peliculas</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CMDBLogic-DataService.html">DataService</a></li><li><a href="module-app-DataService.html">DataService</a></li></ul><h3>Classes</h3><ul><li><a href="module-CMDBLogic-Genero.html">Genero</a></li><li><a href="module-CMDBLogic-Pelicula.html">Pelicula</a></li><li><a href="module-app-Genero.html">Genero</a></li><li><a href="module-app-Pelicula.html">Pelicula</a></li></ul><h3>Events</h3><ul><li><a href="module-peliculas.html#~event:DOMContentLoaded">DOMContentLoaded</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sun Dec 07 2025 01:56:21 GMT+0100 (hora estándar de Europa central)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

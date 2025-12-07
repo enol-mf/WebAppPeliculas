@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generos</title>
+    <link rel="stylesheet" href="css/stylesPeliculas.css">
+</head>
+<body>
+    <div class="espacioArriba"></div>
+    <div class="container">
+        <div class="header">
+        <h1>CMDB</h1>
+        <h2>CIFP Movie DataBase</h2>
+        <form class="botones">
+            <a href="index.html" class="button-33">Inicio</a>
+            <a href="peliculas.html" class="button-33">Películas</a>
+            <a href="generos.html" class="button-33">Géneros</a>
+            <a href="listado.html" class="button-33">Listado de Películas</a>
+        </form>
+        </div>
+
+        <div class="espacioCentro"></div>
+
+        <form class="bloqueAgregar" id="formGeneros">
+            <div class="izq">
+                <label>ID (solo lectura)</label>
+                <input type="number" id="idGenero" readonly style="background-color: #e0e0e0;"><br>
+                <label>Género</label>
+                <input type="text" id="nuevoGenero" maxlength="100"><br><br>
+
+                <input type="submit" value="Agregar" id="btnSubmitGenero" style="width: 100px;">
+                <button type="button" id="btnCancelarGenero" style="width: 100px; display: none;">Cancelar</button>
+            </div>
+
+            <div class="der">
+                <label>Lista de géneros:</label>
+                <ul id="listaGenerosPagina"></ul>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/CMDBLogic.js"></script>
+    <script src="js/generos.js"></script>
+</body>
+</html>

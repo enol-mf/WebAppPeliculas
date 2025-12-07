@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: old_app.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: old_app.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Representa una película.
+ * @typedef {Object} Pelicula
+ * @property {string} nombre - Nombre de la película.
+ * @property {string} anio - Año de estreno.
+ * @property {string[]} generos - Lista de géneros de la película.
+ */
+
+/**
+ * Carga los géneros almacenados en localStorage y los muestra en checkboxes y listas.
+ * @returns {void}
+ */
+function cargarGeneros() {
+    /** @type {string[]} */
+    const generos = JSON.parse(localStorage.getItem("generos")) || [];
+
+    /** @type {HTMLElement | null} */
+    const cont = document.getElementById("listaGeneros");
+    if (cont) {
+        cont.innerHTML = "";
+        generos.forEach(g => {
+            const div = document.createElement("div");
+            div.innerHTML = `
+                &lt;input type="checkbox" value="${g}" name="genero">
+                &lt;label>${g}&lt;/label>
+            `;
+            cont.appendChild(div);
+        });
+    }
+
+    /** @type {HTMLElement | null} */
+    const listaPag = document.getElementById("listaGenerosPagina");
+    if (listaPag) {
+        listaPag.innerHTML = "";
+        generos.forEach(g => {
+            const li = document.createElement("li");
+            li.textContent = g;
+            listaPag.appendChild(li);
+        });
+    }
+}
+
+/**
+ * Maneja el submit del formulario de géneros.
+ * @param {Event} e - Evento del formulario.
+ * @returns {void}
+ */
+const formGeneros = document.getElementById("formGeneros");
+if (formGeneros) {
+    formGeneros.addEventListener("submit", e => {
+        e.preventDefault();
+
+        /** @type {string} */
+        const nuevo = document.getElementById("nuevoGenero").value.trim();
+        if (!nuevo) return alert("Escribe un género.");
+
+        /** @type {string[]} */
+        let generos = JSON.parse(localStorage.getItem("generos")) || [];
+        if (generos.includes(nuevo)) return alert("Ese género ya existe.");
+
+        generos.push(nuevo);
+        localStorage.setItem("generos", JSON.stringify(generos));
+        document.getElementById("nuevoGenero").value = "";
+
+        cargarGeneros();
+        alert("Género agregado.");
+    });
+}
+
+/**
+ * Maneja el submit del formulario de películas.
+ * @param {Event} e - Evento del formulario.
+ * @returns {void}
+ */
+const formPeliculas = document.getElementById("formPeliculas");
+if (formPeliculas) {
+    formPeliculas.addEventListener("submit", e => {
+        e.preventDefault();
+
+        /** @type {string} */
+        const nombre = document.getElementById("Nombre").value.trim();
+        /** @type {string} */
+        const anio = document.getElementById("Anio").value.trim();
+        /** @type {string[]} */
+        const generos = [...document.querySelectorAll("input[name='genero']:checked")].map(x => x.value);
+
+        if (!nombre || !anio || generos.length === 0) {
+            return alert("Completa todos los campos y selecciona al menos un género.");
+        }
+
+        /** @type {Pelicula[]} */
+        let peliculas = JSON.parse(localStorage.getItem("peliculas")) || [];
+        peliculas.push({ nombre, anio, generos });
+        localStorage.setItem("peliculas", JSON.stringify(peliculas));
+
+        formPeliculas.reset();
+        alert("Película agregada.");
+    });
+}
+
+/**
+ * Muestra la lista de películas en el DOM.
+ * @returns {void}
+ */
+const listaPeliculas = document.getElementById("listaPeliculas");
+if (listaPeliculas) {/**
+ * Representa una película.
+ * @typedef {Object} Pelicula
+ * @property {string} nombre - Nombre de la película.
+ * @property {string} anio - Año de estreno.
+ * @property {string[]} generos - Lista de géneros de la película.
+ */
+
+/**
+ * Carga los géneros almacenados en localStorage y los muestra en checkboxes y listas.
+ * @returns {void}
+ */
+function cargarGeneros() {
+  /** @type {string[]} */
+  const generos = JSON.parse(localStorage.getItem("generos")) || [];
+
+  /** @type {HTMLElement | null} */
+  const cont = document.getElementById("listaGeneros");
+  if (cont) {
+    cont.innerHTML = "";
+    generos.forEach((g) => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        &lt;input type="checkbox" value="${g}" name="genero">
+        &lt;label>${g}&lt;/label>
+      `;
+      cont.appendChild(div);
+    });
+  }
+
+  /** @type {HTMLElement | null} */
+  const listaPag = document.getElementById("listaGenerosPagina");
+  if (listaPag) {
+    listaPag.innerHTML = "";
+    generos.forEach((g) => {
+      const li = document.createElement("li");
+      li.textContent = g;
+      listaPag.appendChild(li);
+    });
+  }
+}
+
+/**
+ * Maneja el envío del formulario de géneros.
+ * @param {Event} e - Evento del formulario.
+ * @returns {void}
+ */
+const formGeneros = document.getElementById("formGeneros");
+if (formGeneros) {
+  formGeneros.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    /** @type {string} */
+    const nuevo = document.getElementById("nuevoGenero").value.trim();
+    if (!nuevo) return alert("Escribe un género.");
+
+    /** @type {string[]} */
+    let generos = JSON.parse(localStorage.getItem("generos")) || [];
+    if (generos.includes(nuevo)) return alert("Ese género ya existe.");
+
+    generos.push(nuevo);
+    localStorage.setItem("generos", JSON.stringify(generos));
+    document.getElementById("nuevoGenero").value = "";
+
+    cargarGeneros();
+    alert("Género agregado.");
+  });
+}
+
+/**
+ * Maneja el envío del formulario de películas.
+ * @param {Event} e - Evento del formulario.
+ * @returns {void}
+ */
+const formPeliculas = document.getElementById("formPeliculas");
+if (formPeliculas) {
+  formPeliculas.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    /** @type {string} */
+    const nombre = document.getElementById("Nombre").value.trim();
+    /** @type {string} */
+    const anio = document.getElementById("Anio").value.trim();
+    /** @type {string[]} */
+    const generos = [...document.querySelectorAll("input[name='genero']:checked")].map(
+      (x) => x.value
+    );
+
+    if (!nombre || !anio || generos.length === 0) {
+      return alert("Completa todos los campos y selecciona al menos un género.");
+    }
+
+    /** @type {Pelicula[]} */
+    let peliculas = JSON.parse(localStorage.getItem("peliculas")) || [];
+    peliculas.push({ nombre, anio, generos });
+    localStorage.setItem("peliculas", JSON.stringify(peliculas));
+
+    formPeliculas.reset();
+    alert("Película agregada.");
+  });
+}
+
+/**
+ * Muestra la lista de películas en el DOM.
+ * @returns {void}
+ */
+const listaPeliculas = document.getElementById("listaPeliculas");
+if (listaPeliculas) {
+  /** @type {Pelicula[]} */
+  const peliculas = JSON.parse(localStorage.getItem("peliculas")) || [];
+  peliculas.forEach((p) => {
+    const li = document.createElement("li");
+    li.innerHTML = `&lt;strong>${p.nombre}&lt;/strong> (${p.anio}) – Géneros: ${p.generos.join(", ")}`;
+    listaPeliculas.appendChild(li);
+  });
+}
+
+    /** @type {Pelicula[]} */
+    const peliculas = JSON.parse(localStorage.getItem("peliculas")) || [];
+    peliculas.forEach(p => {
+        const li = document.createElement("li");
+        li.innerHTML = `&lt;strong>${p.nombre}&lt;/strong> (${p.anio}) – Géneros: ${p.generos.join(", ")}`;
+        listaPeliculas.appendChild(li);
+    });
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#cargarGeneros">cargarGeneros</a></li><li><a href="global.html#formGeneros">formGeneros</a></li><li><a href="global.html#formPeliculas">formPeliculas</a></li><li><a href="global.html#listaPeliculas">listaPeliculas</a></li><li><a href="global.html#peliculas">peliculas</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Dec 05 2025 12:06:19 GMT+0100 (hora estándar de Europa central)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
